@@ -1,3 +1,4 @@
+from multiprocessing import context
 from django.contrib.auth import login as auth_login
 from django.contrib.auth import logout as auth_logout
 from django.contrib.auth import update_session_auth_hash
@@ -6,6 +7,7 @@ from django.contrib.auth.forms import AuthenticationForm, PasswordChangeForm
 from django.shortcuts import redirect, render
 from django.views.decorators.http import require_http_methods, require_POST
 from django.contrib.auth import get_user_model
+from django.http.response import JsonResponse
 
 from .forms import CustomUserChangeForm, CustomUserCreationForm
 
@@ -116,11 +118,19 @@ def follow(request, user_pk):
         User = get_user_model()
         me = request.user
         you = User.objects.get(pk=user_pk)
+    
         if me != you:
             if you.followers.filter(pk=me.pk).exists():
                 you.followers.remove(me)
+                is_followed = False
             else:
                 you.followers.add(me)
+                is_followed = True
+            context = {
+                'is_followed': is_followed,
+                'count': you.followers.count()
+            }
+            return JsonResponse(context)
         return redirect('accounts:profile', you.username)
     return redirect('accounts:login')
 
