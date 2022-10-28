@@ -17,13 +17,50 @@
       <form action="{% url 'articles:likes' article.pk %}" method="POST">
         {% csrf_token %}
         {% if request.user in article.like_users.all %}
-          <input type="submit" value="좋아요 취소">
+          <i class = "fas fa-thumbs-down like-button" data-id = "{{ article.id }}" style = "color : tomato"></i>
         {% else %}
-          <input type="submit" value="좋아요">
+          <i class = "fas fa-thumbs-up like-button" data-id = "{{ article.id }}" style = "color : black"></i>
         {% endif %}
+        <span class = 'like-count-{{ article.id }}'> 좋아요: {{ article.like_users.count }}</span>
       </form>
     </div>
     <a href="{% url 'articles:detail' article.pk %}">상세 페이지</a>
     <hr>
   {% endfor %}
 {% endblock content %}
+
+{% block script %}
+<script src="https://kit.fontawesome.com/0fc2afb9e7.js" crossorigin="anonymous"></script>
+<script>
+  const likeButton = document.querySelectorAll('.like-button')
+  likeButton.forEach(button =>{
+    button.addEventListener('click', function(event){
+      const articleId = event.target.dataset.id
+      const likeCount = document.querySelector(`.like-count-${articleId}`)
+      const csrftoken = document.querySelector('[name=csrfmiddlewaretoken]').value;
+
+      axios({
+        method : 'POST',
+        url : `/articles/${articleId}/likes/`,
+        headers : {'X-CSRFToken': csrftoken}
+      })
+      .then(response => {
+        likeCount.innerText = response.data.count
+        if (response.data.is_liked){
+          event.target.className = 'fas fa-thumbs-up like-button'
+          event.target.style.color = 'crimson'
+        } else {
+            event.target.className = 'fas fa-thumbs-down like-button'
+            event.target.style.color = 'black'
+        }
+      })
+      .catch((error) =>{
+        console.log(error)
+      })     
+    })
+  })
+
+
+
+</script>
+{% endblock script %}
